@@ -16,12 +16,29 @@
             android:layout_height="wrap_content"
             android:id="@+id/add_toolbar">
 
-            <ImageButton
-                android:id="@+id/back_1"
-                android:layout_width="wrap_content"
+            <RelativeLayout
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:src="@drawable/back_arrow"
-                android:background="@null"/>
+                android:layout_marginRight="20dp">
+
+                <ImageButton
+                    android:id="@+id/back_1"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:src="@drawable/back_arrow"
+                    android:background="@null"/>
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Search"
+                    android:textColor="@color/white"
+                    android:layout_centerHorizontal="true"
+                    android:layout_centerVertical="true"/>
+
+            </RelativeLayout>
+
+
 
         </androidx.appcompat.widget.Toolbar>
 

@@ -6,21 +6,49 @@
     android:layout_height="match_parent"
     tools:context=".activities.MainActivity">
 
-    <com.mapbox.mapboxsdk.maps.MapView
-        android:id="@+id/mapView"
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        />
+        android:layout_height="match_parent">
 
-    <ImageButton
-        android:id="@+id/zoom_btn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:src="@drawable/zoom"
-        android:background="@null"
-        android:layout_alignParentEnd="true"
-        android:layout_alignParentBottom="true"
-        android:layout_marginRight="30dp"
-        android:layout_marginBottom="30dp"/>
+        <com.mapbox.mapboxsdk.maps.MapView
+            android:id="@+id/mapView"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            />
+
+        <ImageButton
+            android:id="@+id/zoom_btn"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_marginRight="30dp"
+            android:layout_marginBottom="30dp"
+            android:scaleType="fitXY"
+            android:layout_gravity="top|end"
+            app:layout_anchor="@id/bottom_sheet"
+            app:layout_anchorGravity="top|right"
+            android:background="@null"
+            android:src="@drawable/zoom"
+            app:useCompatPadding="true" />
+
+        <androidx.core.widget.NestedScrollView
+            android:id="@+id/bottom_sheet"
+            style="?attr/bottomSheetStyle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:fillViewport="true"
+            app:behavior_hideable="true"
+            app:behavior_peekHeight="100dp"
+            app:layout_behavior="com.google.android.material.bottomsheet.BottomSheetBehavior">
+
+            <FrameLayout
+                android:id="@+id/fragment_container_bottom"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </androidx.core.widget.NestedScrollView>
+
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+
 
 </RelativeLayout>

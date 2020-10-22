@@ -23,6 +23,8 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.example.mybus.R;
+import com.example.mybus.fragments.HomeNav;
+import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.mapbox.android.core.location.LocationEngine;
@@ -66,6 +68,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public static Boolean isvis = false;
     public Location forfrag;
 
+    private BottomSheetBehavior bottomSheetBehavior;
+
     private LocationChangeListeningActivityLocationCallback callback =
             new LocationChangeListeningActivityLocationCallback(this);
 
@@ -78,6 +82,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
+
+        View bottomSheet = findViewById(R.id.bottom_sheet);
+        bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
 
         zoom = findViewById(R.id.zoom_btn);
         zoom.setOnClickListener(new View.OnClickListener() {
@@ -107,6 +114,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 }
             }
         });
+
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_bottom,
+                new HomeNav()).commit();
     }
 
     @Override
