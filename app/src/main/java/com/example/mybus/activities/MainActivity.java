@@ -34,6 +34,7 @@ import com.mapbox.android.core.location.LocationEngineRequest;
 import com.mapbox.android.core.location.LocationEngineResult;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
+import com.mapbox.android.gestures.MoveGestureDetector;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
@@ -52,12 +53,13 @@ import java.util.List;
 import static android.location.GpsStatus.GPS_EVENT_STARTED;
 import static android.location.GpsStatus.GPS_EVENT_STOPPED;
 
-public class MainActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, PermissionsListener {
+public class MainActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, PermissionsListener,
+        MapboxMap.OnFlingListener, MapboxMap.OnMoveListener, MapboxMap.OnCameraMoveListener{
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     LocationManager locationManager;
     String provider;
-
+    public String currentFrame = "";
     private PermissionsManager permissionsManager;
     private static MapView mapView;
     private MapboxMap mapboxMap;
@@ -123,6 +125,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public void onMapReady(@NonNull MapboxMap mapboxMap) {
 
         MainActivity.this.mapboxMap = mapboxMap;
+        currentFrame = "search";
 
         mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
             @Override
@@ -131,6 +134,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 enableLocationComponent(style);
 
                 checklivelocation();
+
+                mapboxMap.addOnFlingListener(MainActivity.this);
+                mapboxMap.addOnMoveListener(MainActivity.this);
+                mapboxMap.addOnCameraMoveListener(MainActivity.this);
 
                 try {
 
@@ -153,6 +160,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
             }
         });
+    }
+
+    public void collapseState() {
+        bottomSheetBehavior.setHideable(false);
+
+        if (currentFrame.equals("search")) {
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 110.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        }
     }
 
     @SuppressWarnings( {"MissingPermission"})
@@ -345,6 +364,31 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         locationEngine.requestLocationUpdates(request, callback, getMainLooper());
         locationEngine.getLastLocation(callback);
+    }
+
+    @Override
+    public void onFling() {
+        collapseState();
+    }
+
+    @Override
+    public void onMoveBegin(@NonNull MoveGestureDetector detector) {
+        collapseState();
+    }
+
+    @Override
+    public void onMove(@NonNull MoveGestureDetector detector) {
+
+    }
+
+    @Override
+    public void onMoveEnd(@NonNull MoveGestureDetector detector) {
+
+    }
+
+    @Override
+    public void onCameraMove() {
+
     }
 
 
