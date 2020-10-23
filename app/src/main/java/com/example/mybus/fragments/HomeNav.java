@@ -5,7 +5,10 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
+import android.os.Handler;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -44,6 +47,36 @@ public class HomeNav extends Fragment {
     @Override
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         // Code
+
+        search.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addFragment(new SearchLocation(), false, "HELLO");
+            }
+        });
+
+        searchLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addFragment(new SearchLocation(), false, "HELLO");
+            }
+        });
+
+    }
+
+    public void addFragment(Fragment fragment, boolean addToBackStack, String tag) {
+
+        ma.currentFrame = "search2";
+        ma.collapseState();
+
+        Handler h2 = new Handler();
+        h2.postDelayed(() -> {
+            FragmentManager manager2 = getActivity().getSupportFragmentManager();
+            FragmentTransaction ft2 = manager2.beginTransaction();
+            ft2.addToBackStack(null);
+            ft2.replace(R.id.fragment_container_search, fragment, tag);
+            ft2.commitAllowingStateLoss();
+        }, 250);
 
     }
 }

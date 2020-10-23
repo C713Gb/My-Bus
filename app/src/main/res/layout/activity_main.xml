@@ -6,21 +6,26 @@
     android:layout_height="match_parent"
     tools:context=".activities.MainActivity">
 
+    <com.mapbox.mapboxsdk.maps.MapView
+        android:id="@+id/mapView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        />
+
     <androidx.coordinatorlayout.widget.CoordinatorLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent">
 
-        <com.mapbox.mapboxsdk.maps.MapView
-            android:id="@+id/mapView"
+        <FrameLayout
+            android:id="@+id/fragment_container_search"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            />
+            android:layout_height="match_parent"/>
 
         <ImageButton
             android:id="@+id/zoom_btn"
             android:layout_width="56dp"
             android:layout_height="56dp"
-            android:layout_marginRight="30dp"
+            android:layout_marginRight="10dp"
             android:layout_marginBottom="30dp"
             android:scaleType="fitXY"
             android:layout_gravity="top|end"

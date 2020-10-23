@@ -1,5 +1,6 @@
 package com.example.mybus.activities;
 
+import androidx.activity.OnBackPressedDispatcherOwner;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -57,6 +58,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         MapboxMap.OnFlingListener, MapboxMap.OnMoveListener, MapboxMap.OnCameraMoveListener{
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    private static final int WELCOME_TIMEOUT = 250;
     LocationManager locationManager;
     String provider;
     public String currentFrame = "";
@@ -162,12 +164,46 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         });
     }
 
+    @Override
+    public void onBackPressed() {
+
+
+        super.onBackPressed();
+
+        if (currentFrame.equals("search2")) {
+            currentFrame = "search";
+            expandState();
+        }
+
+    }
+
+    public void expandState() {
+        bottomSheetBehavior.setHideable(false);
+
+        if (currentFrame.equals("search")) {
+            zoom.setVisibility(View.VISIBLE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 110.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        }
+    }
+
     public void collapseState() {
         bottomSheetBehavior.setHideable(false);
 
         if (currentFrame.equals("search")) {
+            zoom.setVisibility(View.VISIBLE);
             final float scale = getResources().getDisplayMetrics().density;
             final float GESTURE_THRESHOLD_DP = 110.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        } else {
+            zoom.setVisibility(View.GONE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 1.0f;
             int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
@@ -222,6 +258,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     protected void onStart() {
         super.onStart();
         mapView.onStart();
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                expandState();
+            }
+        }, WELCOME_TIMEOUT);
+
     }
 
     @Override

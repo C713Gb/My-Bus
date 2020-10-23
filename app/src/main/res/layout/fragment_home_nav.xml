@@ -69,8 +69,8 @@
 
             <ImageButton
                 android:id="@+id/bus_btn"
-                android:layout_width="30dp"
-                android:layout_height="30dp"
+                android:layout_width="31dp"
+                android:layout_height="31dp"
                 android:src="@drawable/bus_two"
                 android:scaleType="fitXY"
                 android:background="@null"
