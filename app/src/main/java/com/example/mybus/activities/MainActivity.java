@@ -6,12 +6,19 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
+import androidx.fragment.app.FragmentTransaction;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
+import android.graphics.drawable.Icon;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -24,6 +31,7 @@ import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.example.mybus.R;
+import com.example.mybus.fragments.AddLocation;
 import com.example.mybus.fragments.HomeNav;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.firebase.database.DatabaseReference;
@@ -36,9 +44,16 @@ import com.mapbox.android.core.location.LocationEngineResult;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.android.gestures.MoveGestureDetector;
+import com.mapbox.api.geocoding.v5.models.CarmenFeature;
+import com.mapbox.geojson.Feature;
+import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.IconFactory;
+import com.mapbox.mapboxsdk.annotations.MarkerOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
+import com.mapbox.mapboxsdk.geometry.LatLng;
 import com.mapbox.mapboxsdk.location.LocationComponent;
 import com.mapbox.mapboxsdk.location.LocationComponentActivationOptions;
 import com.mapbox.mapboxsdk.location.modes.CameraMode;
@@ -47,6 +62,9 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
+import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 import java.lang.ref.WeakReference;
 import java.util.List;
@@ -61,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private static final int WELCOME_TIMEOUT = 250;
     LocationManager locationManager;
     String provider;
-    public String currentFrame = "";
+    public String currentFrame = "", placeName = "";
     private PermissionsManager permissionsManager;
     private static MapView mapView;
     private MapboxMap mapboxMap;
@@ -76,6 +94,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
     private LocationChangeListeningActivityLocationCallback callback =
             new LocationChangeListeningActivityLocationCallback(this);
+
+    private static final int REQUEST_CODE_AUTOCOMPLETE = 1;
+    private String geojsonSourceLayerId = "geojsonSourceLayerId";
+    private String symbolIconId = "symbolIconId";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -173,6 +195,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         if (currentFrame.equals("search2")) {
             currentFrame = "search";
             expandState();
+            mapboxMap.clear();
         }
 
     }
@@ -181,6 +204,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         bottomSheetBehavior.setHideable(false);
 
         if (currentFrame.equals("search")) {
+            zoom.setVisibility(View.VISIBLE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 110.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        } else {
             zoom.setVisibility(View.VISIBLE);
             final float scale = getResources().getDisplayMetrics().density;
             final float GESTURE_THRESHOLD_DP = 110.0f;
@@ -201,13 +231,29 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
         } else {
-            zoom.setVisibility(View.GONE);
+            zoom.setVisibility(View.VISIBLE);
             final float scale = getResources().getDisplayMetrics().density;
-            final float GESTURE_THRESHOLD_DP = 1.0f;
+            final float GESTURE_THRESHOLD_DP = 110.0f;
             int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
         }
+    }
+
+    public void searchLocation() {
+        Point myPoint = Point.fromLngLat(77.5946, 12.9716);
+
+        Intent intent = new PlaceAutocomplete.IntentBuilder()
+                .accessToken(Mapbox.getAccessToken() != null ? Mapbox.getAccessToken() : getString(R.string.mapbox_access_token))
+                .placeOptions(PlaceOptions.builder()
+                        .backgroundColor(Color.parseColor("#EEEEEE"))
+                        .toolbarColor(getResources().getColor(R.color.colorPrimary))
+                        .limit(10)
+                        .proximity(myPoint)
+                        .country("IN")
+                        .build(PlaceOptions.MODE_CARDS))
+                .build(MainActivity.this);
+        startActivityForResult(intent, REQUEST_CODE_AUTOCOMPLETE);
     }
 
     @SuppressWarnings( {"MissingPermission"})
@@ -348,6 +394,64 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public void onRequestPermissionsResult(int requestCode,
                                            String permissions[], int[] grantResults) {
         permissionsManager.onRequestPermissionsResult(requestCode, permissions, grantResults);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_CODE_AUTOCOMPLETE) {
+
+            mapboxMap.clear();
+            CarmenFeature selectedCarmenFeature = PlaceAutocomplete.getPlace(data);
+            Log.d("PLACE", selectedCarmenFeature.placeName());
+
+            if (mapboxMap != null) {
+                Style style = mapboxMap.getStyle();
+                if (style != null) {
+                    GeoJsonSource source = style.getSourceAs(geojsonSourceLayerId);
+                    if (source != null) {
+                        source.setGeoJson(FeatureCollection.fromFeatures(
+                                new Feature[] {Feature.fromJson(selectedCarmenFeature.toJson())}));
+                    }
+
+                    mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(
+                            new CameraPosition.Builder()
+                                    .target(new LatLng(((Point) selectedCarmenFeature.geometry()).latitude(),
+                                            ((Point) selectedCarmenFeature.geometry()).longitude()))
+                                    .zoom(14)
+                                    .build()), 4000);
+                    placeName = selectedCarmenFeature.placeName();
+
+                    LatLng loc = new LatLng(((Point) selectedCarmenFeature.geometry()).latitude(),
+                            ((Point) selectedCarmenFeature.geometry()).longitude());
+
+//                    IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+//                    Icon icon = iconFactory.fromResource(R.drawable.blue_marker);
+
+                    mapboxMap.addMarker(new MarkerOptions()
+                            .position(new LatLng(loc.getLatitude(), loc.getLongitude()))
+                            .title(placeName));
+
+                    addFragment(new AddLocation(), false, "HELLO");
+                }
+            }
+        }
+    }
+
+    public void addFragment(Fragment fragment, boolean addToBackStack, String tag) {
+
+        currentFrame = "search2";
+        collapseState();
+
+        Handler h2 = new Handler();
+        h2.postDelayed(() -> {
+            FragmentManager manager2 = getSupportFragmentManager();
+            FragmentTransaction ft2 = manager2.beginTransaction();
+            ft2.addToBackStack(null);
+            ft2.replace(R.id.fragment_container_bottom, fragment, tag);
+            ft2.commitAllowingStateLoss();
+        }, 250);
+
     }
 
     @Override

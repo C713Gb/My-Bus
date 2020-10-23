@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.AddLocation"
+    android:background="@drawable/bottom_sheet_page">
+
+    <View
+        android:id="@+id/divider2"
+        android:layout_width="50dp"
+        android:layout_height="4dp"
+        android:layout_centerHorizontal="true"
+        android:background="?android:attr/listDivider"
+        android:layout_marginTop="10dp"/>
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/search_card"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:elevation="4dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginTop="40dp"
+        android:layout_marginBottom="30dp">
+
+        <RelativeLayout
+            android:id="@+id/search_result_layout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:gravity="center">
+
+            <TextView
+                android:id="@+id/search_result_txt"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Bengaluru, India"
+                android:textColor="@color/black"
+                android:layout_centerHorizontal="true"
+                android:layout_centerVertical="true"
+                android:clickable="true"
+                android:padding="10dp"
+                android:gravity="center"/>
+
+        </RelativeLayout>
+
+    </androidx.cardview.widget.CardView>
+
+    <Button
+        android:id="@+id/add_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/search_card"
+        android:background="@drawable/signup_btn"
+        android:text="Add Pickup"
+        android:textColor="@color/white"
+        android:textAllCaps="false"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="10dp"/>
+
+    <Button
+        android:id="@+id/change_btn"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/add_btn"
+        android:background="@drawable/signin_btn"
+        android:text="Change Pickup Point"
+        android:textColor="@color/grey"
+        android:textAllCaps="false"
+        android:layout_marginLeft="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="20dp"/>
+
+</RelativeLayout>

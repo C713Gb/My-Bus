@@ -1,5 +1,6 @@
 package com.example.mybus.fragments;
 
+import android.content.Intent;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -18,6 +19,10 @@ import android.widget.TextView;
 
 import com.example.mybus.R;
 import com.example.mybus.activities.MainActivity;
+import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
+import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment;
 
 public class HomeNav extends Fragment {
 
@@ -51,14 +56,15 @@ public class HomeNav extends Fragment {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addFragment(new SearchLocation(), false, "HELLO");
+//                addFragment(new SearchLocation(), false, "HELLO");
             }
         });
 
         searchLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                addFragment(new SearchLocation(), false, "HELLO");
+//                addFragment(new SearchLocation(), false, "HELLO");
+                ma.searchLocation();
             }
         });
 
