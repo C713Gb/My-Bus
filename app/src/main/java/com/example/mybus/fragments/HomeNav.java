@@ -56,14 +56,13 @@ public class HomeNav extends Fragment {
         search.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                addFragment(new SearchLocation(), false, "HELLO");
+                ma.searchLocation();
             }
         });
 
         searchLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-//                addFragment(new SearchLocation(), false, "HELLO");
                 ma.searchLocation();
             }
         });
