@@ -15,9 +15,11 @@
         android:elevation="4dp">
 
         <LinearLayout
+            android:id="@+id/location_layout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
+            android:clickable="true"
             android:padding="10dp">
 
             <TextView

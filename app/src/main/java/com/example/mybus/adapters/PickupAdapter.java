@@ -4,6 +4,7 @@ import android.content.Context;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -75,6 +76,24 @@ public class PickupAdapter extends RecyclerView.Adapter<PickupAdapter.MyViewHold
                 pa.pickupMap.put(pickupArrayList.get(position).getPlaceName(), checked);
             }
         });
+
+        holder.linearLayout.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                pa.deleteText = pickupArrayList.get(position).getId();
+                pa.removePopup();
+                return true;
+            }
+        });
+
+        holder.text.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                pa.deleteText = pickupArrayList.get(position).getId();
+                pa.removePopup();
+                return true;
+            }
+        });
     }
 
     @Override
@@ -86,6 +105,7 @@ public class PickupAdapter extends RecyclerView.Adapter<PickupAdapter.MyViewHold
         TextView text;
         Switch aSwitch;
         CardView cardView;
+        LinearLayout linearLayout;
 
         public MyViewHolder(@NonNull View itemView) {
             super(itemView);
@@ -94,6 +114,7 @@ public class PickupAdapter extends RecyclerView.Adapter<PickupAdapter.MyViewHold
             text = itemView.findViewById(R.id.location_text);
             aSwitch = itemView.findViewById(R.id.location_switch);
             cardView = itemView.findViewById(R.id.location_card);
+            linearLayout = itemView.findViewById(R.id.location_layout);
 
         }
     }

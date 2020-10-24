@@ -6,12 +6,16 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 
+import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mybus.R;
@@ -41,6 +45,8 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
     public HashMap<String,String> pickupMap;
     ProgressDialog pd;
     FirebaseAuth auth;
+    Dialog dialog;
+    public String deleteText = "";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,6 +60,7 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
         refreshLayout = findViewById(R.id.pickup_swipe);
         back = findViewById(R.id.back_3);
         update = findViewById(R.id.update_location);
+        dialog = new Dialog(this);
 
         refreshLayout.setOnRefreshListener(this);
 
@@ -126,6 +133,42 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
 
         updatePage();
 
+    }
+
+    public void removePopup() {
+        TextView ok, cancel;
+        dialog.setContentView(R.layout.dialog_pickup);
+        ok = dialog.findViewById(R.id.ok_txt);
+        cancel = dialog.findViewById(R.id.cancel_txt);
+        dialog.getWindow().setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+        dialog.show();
+
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dialog.dismiss();
+            }
+        });
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (deleteText != null && deleteText != "" && deleteText.length() > 0) {
+                    reference = FirebaseDatabase.getInstance().getReference("Pickups");
+                    reference.child(deleteText).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                        @Override
+                        public void onComplete(@NonNull Task<Void> task) {
+                            dialog.dismiss();
+                            if (task.isSuccessful()){
+                                onRefresh();
+                            } else {
+                                Toast.makeText(PickupActivity.this, "Failed", Toast.LENGTH_SHORT).show();
+                                Log.d("PICKUP", task.getException().getMessage());
+                            }
+                        }
+                    });
+                }
+            }
+        });
     }
 
     private void updatePage() {
