@@ -16,7 +16,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme">
-        <activity android:name=".activities.AddLocation"></activity>
+        <activity android:name=".activities.PickupActivity"></activity>
+        <activity android:name=".activities.AddLocation" />
         <activity android:name=".activities.SignIn" />
         <activity android:name=".activities.SignUp" />
         <activity android:name=".activities.SplashScreen">

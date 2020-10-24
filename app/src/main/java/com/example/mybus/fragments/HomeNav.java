@@ -19,6 +19,7 @@ import android.widget.TextView;
 
 import com.example.mybus.R;
 import com.example.mybus.activities.MainActivity;
+import com.example.mybus.activities.PickupActivity;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
@@ -67,6 +68,25 @@ public class HomeNav extends Fragment {
             }
         });
 
+        pickupTxt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goToPickup();
+            }
+        });
+
+        pickup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goToPickup();
+            }
+        });
+
+    }
+
+    private void goToPickup() {
+        Intent intent = new Intent(getActivity(), PickupActivity.class);
+        startActivity(intent);
     }
 
     public void addFragment(Fragment fragment, boolean addToBackStack, String tag) {

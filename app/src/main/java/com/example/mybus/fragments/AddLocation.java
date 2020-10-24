@@ -93,7 +93,7 @@ public class AddLocation extends Fragment {
     }
 
     private void addToDatabase(String placeName, String lat, String lng) {
-        pd.setMessage("Adding location...");
+        pd.setMessage("Adding Location...");
         pd.setCanceledOnTouchOutside(false);
         pd.setCancelable(false);
         pd.show();

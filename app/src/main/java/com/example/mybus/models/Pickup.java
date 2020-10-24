@@ -8,22 +8,14 @@ public class Pickup {
     String status;
     String placeName;
 
+    public Pickup() {
+    }
+
     public Pickup(String id, String latitude, String longitude, String status, String placeName) {
         this.id = id;
         this.latitude = latitude;
         this.longitude = longitude;
         this.status = status;
-        this.placeName = placeName;
-    }
-
-    public Pickup() {
-    }
-
-    public String getPlaceName() {
-        return placeName;
-    }
-
-    public void setPlaceName(String placeName) {
         this.placeName = placeName;
     }
 
@@ -57,5 +49,13 @@ public class Pickup {
 
     public void setStatus(String status) {
         this.status = status;
+    }
+
+    public String getPlaceName() {
+        return placeName;
+    }
+
+    public void setPlaceName(String placeName) {
+        this.placeName = placeName;
     }
 }
