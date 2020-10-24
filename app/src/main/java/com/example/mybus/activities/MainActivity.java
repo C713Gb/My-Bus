@@ -80,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     LocationManager locationManager;
     String provider;
     public String currentFrame = "", placeName = "";
+    public String lat = "", lng = "";
     private PermissionsManager permissionsManager;
     private static MapView mapView;
     private MapboxMap mapboxMap;
@@ -424,6 +425,9 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
                     LatLng loc = new LatLng(((Point) selectedCarmenFeature.geometry()).latitude(),
                             ((Point) selectedCarmenFeature.geometry()).longitude());
+
+                    lat = Double.toString(loc.getLatitude());
+                    lng = Double.toString(loc.getLongitude());
 
 //                    IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
 //                    Icon icon = iconFactory.fromResource(R.drawable.blue_marker);

@@ -1,5 +1,6 @@
 package com.example.mybus.fragments;
 
+import android.app.ProgressDialog;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -15,12 +16,23 @@ import android.widget.Toast;
 
 import com.example.mybus.R;
 import com.example.mybus.activities.MainActivity;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
+import java.util.HashMap;
 
 public class AddLocation extends Fragment {
 
     public TextView location;
     Button add, change;
     MainActivity ma;
+    String lat = "", lng = "", placeName = "";
+    FirebaseAuth auth;
+    DatabaseReference ref;
+    ProgressDialog pd;
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -31,6 +43,8 @@ public class AddLocation extends Fragment {
         add = view.findViewById(R.id.add_btn);
         change = view.findViewById(R.id.change_btn);
         ma = (MainActivity) getActivity();
+        auth = FirebaseAuth.getInstance();
+        pd = new ProgressDialog(getContext());
         return view;
     }
 
@@ -41,12 +55,18 @@ public class AddLocation extends Fragment {
 
         if (ma.placeName != "" && ma.placeName != null) {
             location.setText(ma.placeName);
+            placeName = ma.placeName;
         }
+
+        lat = ma.lat;
+        lng = ma.lng;
 
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                Toast.makeText(getContext(), location.getText().toString().trim(), Toast.LENGTH_SHORT).show();
+                if (verifyDetails(placeName, lat, lng)) {
+                    addToDatabase(placeName, lat, lng);
+                }
             }
         });
 
@@ -56,5 +76,51 @@ public class AddLocation extends Fragment {
                 ma.searchLocation();
             }
         });
+    }
+
+    private boolean verifyDetails(String placeName, String lat, String lng) {
+        if (placeName == null || placeName == "" || placeName.length()==0){
+            Toast.makeText(ma, "Invalid Place Name", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        if (lat == null || lat == "" || lat.length() == 0 || lng == null || lng == "" || lng.length() == 0){
+            Toast.makeText(ma, "Invalid Location", Toast.LENGTH_SHORT).show();
+            return false;
+        }
+
+        return true;
+    }
+
+    private void addToDatabase(String placeName, String lat, String lng) {
+        pd.setMessage("Adding location...");
+        pd.setCanceledOnTouchOutside(false);
+        pd.setCancelable(false);
+        pd.show();
+
+        ref = FirebaseDatabase.getInstance().getReference("Pickups");
+        String id = ref.push().getKey();
+
+        HashMap<String, Object> hashMap = new HashMap<>();
+        hashMap.put("id", id);
+        hashMap.put("latitude", lat);
+        hashMap.put("longitude", lng);
+        hashMap.put("status", "true");
+        hashMap.put("placeName", placeName);
+
+        ref.child(id).setValue(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if (task.isSuccessful()){
+                    pd.dismiss();
+                    Toast.makeText(ma, "Added Successfully", Toast.LENGTH_SHORT).show();
+                    ma.onBackPressed();
+                } else {
+                    pd.dismiss();
+                    Toast.makeText(ma, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                }
+            }
+        });
+
     }
 }
