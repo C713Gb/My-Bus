@@ -29,7 +29,7 @@ public class HomeNav extends Fragment {
 
     ImageButton bus, pickup, menu;
     TextView busTxt, pickupTxt, search;
-    RelativeLayout searchLayout;
+    RelativeLayout searchLayout, pickupLayout, busStatusLayout;
     MainActivity ma;
 
     @Override
@@ -41,6 +41,8 @@ public class HomeNav extends Fragment {
         bus = view.findViewById(R.id.bus_btn);
         busTxt = view.findViewById(R.id.bus_txt);
         searchLayout = view.findViewById(R.id.search_layout);
+        pickupLayout = view.findViewById(R.id.pickup_rl);
+        busStatusLayout = view.findViewById(R.id.bus_status_rl);
         menu = view.findViewById(R.id.open_side_nav);
         search = view.findViewById(R.id.search_btn);
         pickup = view.findViewById(R.id.pickup_btn);
@@ -76,6 +78,13 @@ public class HomeNav extends Fragment {
         });
 
         pickup.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                goToPickup();
+            }
+        });
+
+        pickupLayout.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 goToPickup();
