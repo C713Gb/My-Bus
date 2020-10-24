@@ -7,16 +7,26 @@ public class Pickup {
     String longitude;
     String status;
     String placeName;
+    String ownerId;
 
     public Pickup() {
     }
 
-    public Pickup(String id, String latitude, String longitude, String status, String placeName) {
+    public Pickup(String id, String latitude, String longitude, String status, String placeName, String ownerId) {
         this.id = id;
         this.latitude = latitude;
         this.longitude = longitude;
         this.status = status;
         this.placeName = placeName;
+        this.ownerId = ownerId;
+    }
+
+    public String getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(String ownerId) {
+        this.ownerId = ownerId;
     }
 
     public String getId() {

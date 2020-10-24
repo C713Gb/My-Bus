@@ -19,6 +19,7 @@ import com.example.mybus.adapters.PickupAdapter;
 import com.example.mybus.models.Pickup;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
@@ -39,12 +40,14 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
     Button update;
     public HashMap<String,String> pickupMap;
     ProgressDialog pd;
+    FirebaseAuth auth;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pickup);
 
+        auth = FirebaseAuth.getInstance();
         recyclerView = findViewById(R.id.pickup_recycler);
         recyclerView.setHasFixedSize(true);
         recyclerView.setLayoutManager(new LinearLayoutManager(this));
@@ -81,26 +84,29 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
                                 Pickup pickup = snapshot.getValue(Pickup.class);
                                 String place = pickup.getPlaceName();
                                 String id = pickup.getId();
-                                String updatedStatus = pickupMap.get(place);
+                                String ownerId = pickup.getOwnerId();
+                                if (auth.getCurrentUser().getUid().equals(ownerId)) {
+                                    String updatedStatus = pickupMap.get(place);
 
-                                reference.child(id).child("status").setValue(updatedStatus).addOnCompleteListener(new OnCompleteListener<Void>() {
-                                    @Override
-                                    public void onComplete(@NonNull Task<Void> task) {
-                                        pd.dismiss();
-                                        if (task.isSuccessful()){
-                                            // Updated
-                                            k[0] = 1;
-                                        } else {
-                                            // Update Failed
-                                            Toast.makeText(PickupActivity.this, "Update Failed", Toast.LENGTH_SHORT).show();
-                                            Log.d("UPDATE", task.getException().getMessage());
-                                            k[0] = 0;
+                                    reference.child(id).child("status").setValue(updatedStatus).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                        @Override
+                                        public void onComplete(@NonNull Task<Void> task) {
+                                            pd.dismiss();
+                                            if (task.isSuccessful()) {
+                                                // Updated
+                                                k[0] = 1;
+                                            } else {
+                                                // Update Failed
+                                                Toast.makeText(PickupActivity.this, "Update Failed", Toast.LENGTH_SHORT).show();
+                                                Log.d("UPDATE", task.getException().getMessage());
+                                                k[0] = 0;
+                                            }
                                         }
-                                    }
-                                });
+                                    });
 
-                                if (k[0] == 0) {
-                                    break;
+                                    if (k[0] == 0) {
+                                        break;
+                                    }
                                 }
                             }
                         } catch (Exception e){
@@ -139,8 +145,11 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
                         Pickup pickup = dataSnapshot.getValue(Pickup.class);
                         String place = pickup.getPlaceName();
                         String status = pickup.getStatus();
-                        pickupMap.put(place,status);
-                        pickupArrayList.add(pickup);
+                        String ownerId = pickup.getOwnerId();
+                        if (auth.getCurrentUser().getUid().equals(ownerId)) {
+                            pickupMap.put(place, status);
+                            pickupArrayList.add(pickup);
+                        }
                     }
 
                     pickupAdapter = new PickupAdapter(PickupActivity.this, pickupArrayList);

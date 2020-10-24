@@ -106,6 +106,7 @@ public class AddLocation extends Fragment {
         hashMap.put("latitude", lat);
         hashMap.put("longitude", lng);
         hashMap.put("status", "true");
+        hashMap.put("ownerId", auth.getCurrentUser().getUid());
         hashMap.put("placeName", placeName);
 
         ref.child(id).setValue(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
