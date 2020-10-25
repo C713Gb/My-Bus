@@ -180,6 +180,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         super.onBackPressed();
 
         if (currentFrame.equals("search2")) {
+            for(int i=0;i< getSupportFragmentManager().getBackStackEntryCount();i++)
+            {
+                getSupportFragmentManager().popBackStack();
+            }
             currentFrame = "search";
             expandState();
             mapboxMap.clear();
