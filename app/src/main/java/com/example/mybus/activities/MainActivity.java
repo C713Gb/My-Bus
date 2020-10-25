@@ -123,6 +123,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private static final String ICON_ID = "ICON_ID";
     private static final String LAYER_ID = "LAYER_ID";
     List<Feature> symbolLayerIconFeatureList;
+    Style style;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -184,13 +185,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         MainActivity.this.mapboxMap = mapboxMap;
         currentFrame = "search";
 
-        List<Feature> symbolLayerIconFeatureList = new ArrayList<>();
-        symbolLayerIconFeatureList.add(Feature.fromGeometry(
-                Point.fromLngLat(77.668989, 12.996619)));
-        symbolLayerIconFeatureList.add(Feature.fromGeometry(
-                Point.fromLngLat(77.8, 13.07)));
-        symbolLayerIconFeatureList.add(Feature.fromGeometry(
-                Point.fromLngLat(77.579325, 12.912064)));
+        symbolLayerIconFeatureList = new ArrayList<>();
+        drawLayer();
 
         mapboxMap.setStyle(new Style.Builder().fromUri("mapbox://styles/uchiha-itachi/ckgotitik0d7819lata9c7x82")
                 , new Style.OnStyleLoaded() {
@@ -283,36 +279,38 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
     public void drawLayer(){
         if (mapboxMap != null) {
-            final int[] count = {0};
+            symbolLayerIconFeatureList.clear();
 
-            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Pickups");
-            ref.addValueEventListener(new ValueEventListener() {
-                @Override
-                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
-                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
-                        Pickup pickup = snapshot.getValue(Pickup.class);
-                        if (auth.getCurrentUser().getUid().equals(pickup.getOwnerId())){
-                            String lat = pickup.getLatitude();
-                            String lng = pickup.getLongitude();
-                            double dLat = Double.parseDouble(lat);
-                            double dLng = Double.parseDouble(lng);
-                            if (pickup.getStatus().equals("true")) {
-                                ACTIVE_POINTS.add(new LatLng(dLng, dLat));
-                            } else {
-                                NONACTIVE_POINTS.add(new LatLng(dLng, dLat));
+            try {
+
+                DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Pickups");
+                ref.addValueEventListener(new ValueEventListener() {
+                    @Override
+                    public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                        for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                            Pickup pickup = snapshot.getValue(Pickup.class);
+                            if (auth.getCurrentUser().getUid().equals(pickup.getOwnerId())) {
+                                String lat = pickup.getLatitude();
+                                String lng = pickup.getLongitude();
+                                double dLat = Double.parseDouble(lat);
+                                double dLng = Double.parseDouble(lng);
+                                if (pickup.getStatus().equals("true")) {
+                                    symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                                            Point.fromLngLat(dLng, dLat)));
+                                }
                             }
                         }
+
                     }
 
-                    List<List<LatLng>> latLngs = new ArrayList<>();
-                    latLngs.add(ACTIVE_POINTS);
-                }
+                    @Override
+                    public void onCancelled(@NonNull DatabaseError error) {
 
-                @Override
-                public void onCancelled(@NonNull DatabaseError error) {
-
-                }
-            });
+                    }
+                });
+            } catch (Exception e){
+                // Exception
+            }
         }
     }
 
@@ -446,6 +444,14 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     protected void onResume() {
         super.onResume();
         mapView.onResume();
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                onMapReady(mapboxMap);
+            }
+        }, 3000);
+
     }
 
     @Override
