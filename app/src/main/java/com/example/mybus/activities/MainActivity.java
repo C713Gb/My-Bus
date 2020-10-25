@@ -17,6 +17,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
 import android.location.Criteria;
@@ -33,9 +34,14 @@ import android.widget.Toast;
 import com.example.mybus.R;
 import com.example.mybus.fragments.AddLocation;
 import com.example.mybus.fragments.HomeNav;
+import com.example.mybus.models.Pickup;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 import com.mapbox.android.core.location.LocationEngine;
 import com.mapbox.android.core.location.LocationEngineCallback;
 import com.mapbox.android.core.location.LocationEngineProvider;
@@ -62,15 +68,25 @@ import com.mapbox.mapboxsdk.maps.MapView;
 import com.mapbox.mapboxsdk.maps.MapboxMap;
 import com.mapbox.mapboxsdk.maps.OnMapReadyCallback;
 import com.mapbox.mapboxsdk.maps.Style;
+import com.mapbox.mapboxsdk.plugins.annotation.FillManager;
+import com.mapbox.mapboxsdk.plugins.annotation.FillOptions;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
+import com.mapbox.mapboxsdk.style.layers.CircleLayer;
+import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
+import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import static android.location.GpsStatus.GPS_EVENT_STARTED;
 import static android.location.GpsStatus.GPS_EVENT_STOPPED;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
 
 public class MainActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, PermissionsListener,
         MapboxMap.OnFlingListener, MapboxMap.OnMoveListener, MapboxMap.OnCameraMoveListener{
@@ -100,6 +116,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private String geojsonSourceLayerId = "geojsonSourceLayerId";
     private String symbolIconId = "symbolIconId";
     public int count123 = 0;
+    FirebaseAuth auth;
+    public final  List<LatLng> ACTIVE_POINTS = new ArrayList<>();
+    public final  List<LatLng> NONACTIVE_POINTS = new ArrayList<>();
+    private static final String SOURCE_ID = "SOURCE_ID";
+    private static final String ICON_ID = "ICON_ID";
+    private static final String LAYER_ID = "LAYER_ID";
+    List<Feature> symbolLayerIconFeatureList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,6 +130,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
         setContentView(R.layout.activity_main);
 
+        auth = FirebaseAuth.getInstance();
         mapView = (MapView) findViewById(R.id.mapView);
         mapView.onCreate(savedInstanceState);
         mapView.getMapAsync(this);
@@ -145,6 +169,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_bottom,
                 new HomeNav()).commit();
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                onMapReady(mapboxMap);
+            }
+        }, 3000);
     }
 
     @Override
@@ -153,7 +184,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         MainActivity.this.mapboxMap = mapboxMap;
         currentFrame = "search";
 
-        mapboxMap.setStyle(Style.MAPBOX_STREETS, new Style.OnStyleLoaded() {
+        List<Feature> symbolLayerIconFeatureList = new ArrayList<>();
+        symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                Point.fromLngLat(77.668989, 12.996619)));
+        symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                Point.fromLngLat(77.8, 13.07)));
+        symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                Point.fromLngLat(77.579325, 12.912064)));
+
+        mapboxMap.setStyle(new Style.Builder().fromUri("mapbox://styles/uchiha-itachi/ckgotitik0d7819lata9c7x82")
+                , new Style.OnStyleLoaded() {
             @Override
             public void onStyleLoaded(@NonNull Style style) {
 
@@ -163,11 +203,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
                 resetcamera();
 
+                style.addSource(new GeoJsonSource(SOURCE_ID,
+                        FeatureCollection.fromFeatures(symbolLayerIconFeatureList)));
+                style.addLayer(new CircleLayer(LAYER_ID, SOURCE_ID)
+                        .withProperties(
+                                iconImage(ICON_ID),
+                                iconAllowOverlap(true),
+                                iconIgnorePlacement(true)
+                        ));
+
                 mapboxMap.addOnFlingListener(MainActivity.this);
                 mapboxMap.addOnMoveListener(MainActivity.this);
                 mapboxMap.addOnCameraMoveListener(MainActivity.this);
-
-
 
             }
         });
@@ -232,6 +279,41 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         }, 500);
 
 
+    }
+
+    public void drawLayer(){
+        if (mapboxMap != null) {
+            final int[] count = {0};
+
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Pickups");
+            ref.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        Pickup pickup = snapshot.getValue(Pickup.class);
+                        if (auth.getCurrentUser().getUid().equals(pickup.getOwnerId())){
+                            String lat = pickup.getLatitude();
+                            String lng = pickup.getLongitude();
+                            double dLat = Double.parseDouble(lat);
+                            double dLng = Double.parseDouble(lng);
+                            if (pickup.getStatus().equals("true")) {
+                                ACTIVE_POINTS.add(new LatLng(dLng, dLat));
+                            } else {
+                                NONACTIVE_POINTS.add(new LatLng(dLng, dLat));
+                            }
+                        }
+                    }
+
+                    List<List<LatLng>> latLngs = new ArrayList<>();
+                    latLngs.add(ACTIVE_POINTS);
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+        }
     }
 
     public void expandState() {
