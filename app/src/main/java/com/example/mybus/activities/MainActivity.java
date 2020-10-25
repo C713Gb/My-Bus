@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public String lat = "", lng = "";
     private PermissionsManager permissionsManager;
     private static MapView mapView;
-    private MapboxMap mapboxMap;
+    public MapboxMap mapboxMap;
 
     private ImageButton zoom;
     private LocationEngine locationEngine;
@@ -124,6 +124,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private static final String LAYER_ID = "LAYER_ID";
     List<Feature> symbolLayerIconFeatureList;
     Style style;
+    int ct = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -193,11 +194,15 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             @Override
             public void onStyleLoaded(@NonNull Style style) {
 
-                enableLocationComponent(style);
 
-                checklivelocation();
 
-                resetcamera();
+                if (ct == 0) {
+                    enableLocationComponent(style);
+
+                    checklivelocation();
+                    resetcamera();
+                    ct =1;
+                }
 
                 style.addSource(new GeoJsonSource(SOURCE_ID,
                         FeatureCollection.fromFeatures(symbolLayerIconFeatureList)));
@@ -231,6 +236,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             expandState();
             mapboxMap.clear();
         }
+
+        new Handler().postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                onMapReady(mapboxMap);
+            }
+        }, 3000);
 
     }
 

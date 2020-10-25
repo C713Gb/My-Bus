@@ -115,6 +115,7 @@ public class AddLocation extends Fragment {
                 if (task.isSuccessful()){
                     pd.dismiss();
                     Toast.makeText(ma, "Added Successfully", Toast.LENGTH_SHORT).show();
+                    ma.mapboxMap.clear();
                     ma.onBackPressed();
                 } else {
                     pd.dismiss();
