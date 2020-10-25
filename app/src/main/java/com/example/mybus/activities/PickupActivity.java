@@ -153,14 +153,20 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
             @Override
             public void onClick(View v) {
                 if (deleteText != null && deleteText != "" && deleteText.length() > 0) {
+                    dialog.dismiss();
+                    pd.setMessage("Updating...");
+                    pd.show();
+                    pd.setCanceledOnTouchOutside(false);
+                    pd.setCancelable(false);
                     reference = FirebaseDatabase.getInstance().getReference("Pickups");
                     reference.child(deleteText).removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
                         @Override
                         public void onComplete(@NonNull Task<Void> task) {
-                            dialog.dismiss();
                             if (task.isSuccessful()){
+                                pd.dismiss();
                                 onRefresh();
                             } else {
+                                pd.dismiss();
                                 Toast.makeText(PickupActivity.this, "Failed", Toast.LENGTH_SHORT).show();
                                 Log.d("PICKUP", task.getException().getMessage());
                             }
