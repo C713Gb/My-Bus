@@ -252,39 +252,37 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         h.postDelayed(() -> {
             count123++;
-            if(mapboxMap.getLocationComponent().getLastKnownLocation()!=null)
-            {
-                try {
+            try {
 
-                    if(mapboxMap.getLocationComponent().getLastKnownLocation()!=null) {
-                        com.mapbox.mapboxsdk.geometry.LatLng abc = new com.mapbox.mapboxsdk.geometry.LatLng();
-                        abc.setLatitude(mapboxMap.getLocationComponent().getLastKnownLocation().getLatitude());
-                        abc.setLongitude(mapboxMap.getLocationComponent().getLastKnownLocation().getLongitude());
-                        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder()
-                                .target(abc)
-                                .zoom(14f)
-                                .bearing(0)
-                                .padding(0, 0, 0, 500)
-                                .build()), 500);
+                if (mapboxMap.getLocationComponent().getLastKnownLocation() != null) {
+                    try {
 
+                        if (mapboxMap.getLocationComponent().getLastKnownLocation() != null) {
+                            com.mapbox.mapboxsdk.geometry.LatLng abc = new com.mapbox.mapboxsdk.geometry.LatLng();
+                            abc.setLatitude(mapboxMap.getLocationComponent().getLastKnownLocation().getLatitude());
+                            abc.setLongitude(mapboxMap.getLocationComponent().getLastKnownLocation().getLongitude());
+                            mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder()
+                                    .target(abc)
+                                    .zoom(14f)
+                                    .bearing(0)
+                                    .padding(0, 0, 0, 500)
+                                    .build()), 500);
+
+                        } else {
+                            Toast.makeText(getApplicationContext(), "Please Turn on Location...", Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e) {
+                        Toast.makeText(getApplicationContext(), "Please Turn on Location...", Toast.LENGTH_SHORT).show();
                     }
-                    else
-                    {
-                        Toast.makeText(getApplicationContext(),"Please Turn on Location...", Toast.LENGTH_SHORT).show();
+                } else {
+                    if (count123 <= 10) {
+                        resetcamera();
                     }
                 }
-                catch(Exception e)
-                {
-                    Toast.makeText(getApplicationContext(),"Please Turn on Location...", Toast.LENGTH_SHORT).show();
-                }
+            } catch (Exception e) {
+
             }
-            else
-            {
-                if(count123<=10) {
-                    resetcamera();
-                }
-            }
-        }, 500);
+        }, 2000);
 
 
     }
