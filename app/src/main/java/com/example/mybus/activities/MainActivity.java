@@ -304,9 +304,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                                 String lng = pickup.getLongitude();
                                 double dLat = Double.parseDouble(lat);
                                 double dLng = Double.parseDouble(lng);
-                                if (pickup.getStatus().equals("true")) {
-                                    symbolLayerIconFeatureList.add(Feature.fromGeometry(
-                                            Point.fromLngLat(dLng, dLat)));
+                                try {
+                                    if (pickup.getStatus() != null) {
+                                        if (pickup.getStatus().equals("true")) {
+                                            symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                                                    Point.fromLngLat(dLng, dLat)));
+                                        }
+                                    } else {
+                                        DatabaseReference ref2 = FirebaseDatabase.getInstance().getReference("Pickups");
+                                        ref2.child(pickup.getId()).child("status").setValue("true");
+                                        symbolLayerIconFeatureList.add(Feature.fromGeometry(
+                                                Point.fromLngLat(dLng, dLat)));
+                                    }
+                                } catch (Exception e) {
+
                                 }
                             }
                         }

@@ -103,26 +103,35 @@ public class AddLocation extends Fragment {
 
             ref = FirebaseDatabase.getInstance().getReference("Pickups");
             String id = ref.push().getKey();
+            String status = "true";
 
             HashMap<String, Object> hashMap = new HashMap<>();
             hashMap.put("id", id);
             hashMap.put("latitude", lat);
             hashMap.put("longitude", lng);
-            hashMap.put("status", "true");
+            hashMap.put("status", status);
             hashMap.put("ownerId", auth.getCurrentUser().getUid());
             hashMap.put("placeName", placeName);
 
             ref.child(id).setValue(hashMap).addOnCompleteListener(new OnCompleteListener<Void>() {
                 @Override
                 public void onComplete(@NonNull Task<Void> task) {
-                    if (task.isSuccessful()) {
-                        pd.dismiss();
-                        Toast.makeText(ma, "Added Successfully", Toast.LENGTH_SHORT).show();
-                        ma.mapboxMap.clear();
-                        ma.onBackPressed();
-                    } else {
-                        pd.dismiss();
-                        Toast.makeText(ma, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                    try {
+                        if (task.isSuccessful()) {
+                            try {
+                                pd.dismiss();
+                                Toast.makeText(ma, "Added Successfully", Toast.LENGTH_SHORT).show();
+                                ma.mapboxMap.clear();
+                                ma.onBackPressed();
+                            } catch (Exception e) {
+                                Log.d("ADD EXCEPTION1", e.getMessage());
+                            }
+                        } else {
+                            pd.dismiss();
+                            Toast.makeText(ma, task.getException().getMessage(), Toast.LENGTH_SHORT).show();
+                        }
+                    } catch (Exception e){
+                        Log.d("ADD EXCEPTION2", e.getMessage());
                     }
                 }
             });
