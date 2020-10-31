@@ -81,7 +81,7 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
                 pd.show();
 
                 reference = FirebaseDatabase.getInstance().getReference("Pickups");
-                reference.addValueEventListener(new ValueEventListener() {
+                reference.addListenerForSingleValueEvent(new ValueEventListener() {
                     @Override
                     public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                         try {
@@ -94,6 +94,7 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
                                 String ownerId = pickup.getOwnerId();
                                 if (auth.getCurrentUser().getUid().equals(ownerId)) {
                                     String updatedStatus = pickupMap.get(place);
+                                    Log.d("PICKUP", pickupMap.toString());
 
                                     reference.child(id).child("status").setValue(updatedStatus).addOnCompleteListener(new OnCompleteListener<Void>() {
                                         @Override
@@ -182,6 +183,7 @@ public class PickupActivity extends AppCompatActivity implements SwipeRefreshLay
         try {
 
             pickupMap = new HashMap<>();
+            pickupMap.clear();
             reference = FirebaseDatabase.getInstance().getReference("Pickups");
 
             pickupArrayList = new ArrayList<>();
