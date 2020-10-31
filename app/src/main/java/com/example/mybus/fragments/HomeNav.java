@@ -91,6 +91,27 @@ public class HomeNav extends Fragment {
             }
         });
 
+        bus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addFragment(new BusNav(), false, "HELLO", "bus");
+            }
+        });
+
+        busStatusLayout.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addFragment(new BusNav(), false, "HELLO", "bus");
+            }
+        });
+
+        busTxt.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                addFragment(new BusNav(), false, "HELLO", "bus");
+            }
+        });
+
     }
 
     private void goToPickup() {
@@ -98,19 +119,21 @@ public class HomeNav extends Fragment {
         startActivity(intent);
     }
 
-    public void addFragment(Fragment fragment, boolean addToBackStack, String tag) {
+    public void addFragment(Fragment fragment, boolean addToBackStack, String tag, String currentFrame) {
 
-        ma.currentFrame = "search2";
-        ma.collapseState();
+        new Handler().postDelayed(() -> {
+            ma.collapseState2();
+        }, 400);
+        ma.currentFrame = currentFrame;
 
         Handler h2 = new Handler();
         h2.postDelayed(() -> {
             FragmentManager manager2 = getActivity().getSupportFragmentManager();
             FragmentTransaction ft2 = manager2.beginTransaction();
             ft2.addToBackStack(null);
-            ft2.replace(R.id.fragment_container_search, fragment, tag);
+            ft2.replace(R.id.fragment_container_bottom, fragment, tag);
             ft2.commitAllowingStateLoss();
-        }, 250);
+        }, 500);
 
     }
 }

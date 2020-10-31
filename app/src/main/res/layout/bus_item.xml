@@ -8,8 +8,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="KA123"
-        android:textColor="@color/black"
-        android:background="@drawable/curved_btn"
+        android:textColor="@color/white"
+        android:background="@drawable/curved_btn_2"
         android:paddingBottom="10dp"
         android:paddingTop="10dp"
         android:paddingLeft="30dp"
@@ -17,6 +17,7 @@
         android:layout_marginBottom="10dp"
         android:layout_marginTop="10dp"
         android:layout_marginLeft="5dp"
-        android:layout_marginRight="5dp"/>
+        android:layout_marginRight="5dp"
+        android:clickable="true"/>
 
 </RelativeLayout>

@@ -13,6 +13,7 @@ import androidx.fragment.app.FragmentTransaction;
 import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Activity;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -34,6 +35,7 @@ import android.widget.Toast;
 import com.example.mybus.R;
 import com.example.mybus.fragments.AddLocation;
 import com.example.mybus.fragments.HomeNav;
+import com.example.mybus.models.Bus;
 import com.example.mybus.models.Pickup;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
 import com.google.firebase.auth.FirebaseAuth;
@@ -50,9 +52,16 @@ import com.mapbox.android.core.location.LocationEngineResult;
 import com.mapbox.android.core.permissions.PermissionsListener;
 import com.mapbox.android.core.permissions.PermissionsManager;
 import com.mapbox.android.gestures.MoveGestureDetector;
+import com.mapbox.api.directions.v5.DirectionsCriteria;
+import com.mapbox.api.directions.v5.MapboxDirections;
+import com.mapbox.api.directions.v5.models.DirectionsResponse;
+import com.mapbox.api.directions.v5.models.DirectionsRoute;
+import com.mapbox.api.directions.v5.models.RouteLeg;
+import com.mapbox.api.directions.v5.models.VoiceInstructions;
 import com.mapbox.api.geocoding.v5.models.CarmenFeature;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
+import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
@@ -73,6 +82,8 @@ import com.mapbox.mapboxsdk.plugins.annotation.FillOptions;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
 import com.mapbox.mapboxsdk.style.layers.CircleLayer;
+import com.mapbox.mapboxsdk.style.layers.LineLayer;
+import com.mapbox.mapboxsdk.style.layers.Property;
 import com.mapbox.mapboxsdk.style.layers.PropertyFactory;
 import com.mapbox.mapboxsdk.style.layers.SymbolLayer;
 import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
@@ -82,11 +93,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+
 import static android.location.GpsStatus.GPS_EVENT_STARTED;
 import static android.location.GpsStatus.GPS_EVENT_STOPPED;
+import static com.mapbox.core.constants.Constants.PRECISION_6;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineCap;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineColor;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineJoin;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineWidth;
 
 public class MainActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, PermissionsListener,
         MapboxMap.OnFlingListener, MapboxMap.OnMoveListener, MapboxMap.OnCameraMoveListener{
@@ -125,6 +145,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     List<Feature> symbolLayerIconFeatureList;
     Style style;
     int ct = 0;
+    DatabaseReference dRef;
+    public ArrayList<Bus> busArrayList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -178,6 +200,41 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 onMapReady(mapboxMap);
             }
         }, 3000);
+
+        loadBuses();
+    }
+
+    private void loadBuses() {
+
+        try {
+
+            busArrayList = new ArrayList<>();
+            busArrayList.clear();
+
+            dRef = FirebaseDatabase.getInstance().getReference("Buses");
+            dRef.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        Bus bus = snapshot.getValue(Bus.class);
+                        String id = bus.getId();
+                        String ownerId = bus.getOwnerId();
+                        if (auth.getCurrentUser().getUid().equals(ownerId)) {
+                            busArrayList.add(bus);
+                        }
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+
+        } catch (Exception e){
+            Log.d("BUS EXCEPTION", e.getMessage());
+        }
+
     }
 
     @Override
@@ -213,6 +270,18 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                                 iconIgnorePlacement(true)
                         ));
 
+                style.addSource(new GeoJsonSource("ROUTE_SOURCE_ID"));
+                LineLayer routeLayer = new LineLayer("ROUTE_LAYER_ID", "ROUTE_SOURCE_ID");
+
+// Add the LineLayer to the map. This layer will display the directions route.
+                routeLayer.setProperties(
+                        lineCap(Property.LINE_CAP_ROUND),
+                        lineJoin(Property.LINE_JOIN_ROUND),
+                        lineWidth(5f),
+                        lineColor(Color.parseColor("#009688"))
+                );
+                style.addLayerBelow(routeLayer, "below");
+
                 mapboxMap.addOnFlingListener(MainActivity.this);
                 mapboxMap.addOnMoveListener(MainActivity.this);
                 mapboxMap.addOnCameraMoveListener(MainActivity.this);
@@ -228,10 +297,16 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         super.onBackPressed();
 
         if (currentFrame.equals("search2")) {
+            super.onBackPressed();
             for(int i=0;i< getSupportFragmentManager().getBackStackEntryCount();i++)
             {
                 getSupportFragmentManager().popBackStack();
             }
+            currentFrame = "search";
+            expandState();
+            mapboxMap.clear();
+        } else if (currentFrame.equals("bus")) {
+//            collapseState2();
             currentFrame = "search";
             expandState();
             mapboxMap.clear();
@@ -345,6 +420,13 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
             bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        } else if (currentFrame.equals("bus")) {
+            zoom.setVisibility(View.VISIBLE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 110.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_EXPANDED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
         } else {
             zoom.setVisibility(View.VISIBLE);
             final float scale = getResources().getDisplayMetrics().density;
@@ -358,10 +440,19 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public void collapseState() {
         bottomSheetBehavior.setHideable(false);
 
+        Log.d("CURRENT FRAME", currentFrame);
+
         if (currentFrame.equals("search")) {
             zoom.setVisibility(View.VISIBLE);
             final float scale = getResources().getDisplayMetrics().density;
             final float GESTURE_THRESHOLD_DP = 110.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        } else if (currentFrame.equals("bus")) {
+            zoom.setVisibility(View.VISIBLE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 60.0f;
             int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
@@ -373,6 +464,183 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
             bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
         }
+    }
+
+    public void collapseState2() {
+        bottomSheetBehavior.setHideable(false);
+
+        Log.d("CURRENT FRAME", currentFrame);
+
+        if (currentFrame.equals("search")) {
+            zoom.setVisibility(View.VISIBLE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 1.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        } else if (currentFrame.equals("bus")) {
+            zoom.setVisibility(View.VISIBLE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 1.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        } else {
+            zoom.setVisibility(View.VISIBLE);
+            final float scale = getResources().getDisplayMetrics().density;
+            final float GESTURE_THRESHOLD_DP = 1.0f;
+            int mGestureThreshold2 = (int) (GESTURE_THRESHOLD_DP * scale + 0.5f);
+            bottomSheetBehavior.setState(BottomSheetBehavior.STATE_COLLAPSED);
+            bottomSheetBehavior.setPeekHeight(mGestureThreshold2);
+        }
+    }
+
+    public void showDirection(String busId) {
+
+        ProgressDialog pd = new ProgressDialog(MainActivity.this);
+        pd.setMessage("Loading Route...");
+        pd.setCancelable(false);
+        pd.setCanceledOnTouchOutside(false);
+        pd.show();
+
+        Point origin = null;
+        final Point[] destination = {null};
+        final double[] dLat = {0};
+        final double[] dLng = { 0 };
+        final DirectionsRoute[] currentRoute = new DirectionsRoute[1];
+
+        try {
+
+            if (mapboxMap.getLocationComponent().getLastKnownLocation() != null) {
+                try {
+
+                    if (mapboxMap.getLocationComponent().getLastKnownLocation() != null) {
+                        com.mapbox.mapboxsdk.geometry.LatLng abc = new com.mapbox.mapboxsdk.geometry.LatLng();
+                        abc.setLatitude(mapboxMap.getLocationComponent().getLastKnownLocation().getLatitude());
+                        abc.setLongitude(mapboxMap.getLocationComponent().getLastKnownLocation().getLongitude());
+                        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder()
+                                .target(abc)
+                                .zoom(12f)
+                                .bearing(0)
+                                .padding(0, 0, 0, 500)
+                                .build()), 500);
+
+                        origin = Point.fromLngLat(abc.getLongitude(), abc.getLatitude());
+
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Please Turn on Location...", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(getApplicationContext(), "Please Turn on Location...", Toast.LENGTH_SHORT).show();
+                }
+            }
+
+            DatabaseReference ref = FirebaseDatabase.getInstance().getReference("Buses").child(busId).child("pickups");
+            ref.addListenerForSingleValueEvent(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
+                        Pickup pickup = snapshot.getValue(Pickup.class);
+                        String lat = pickup.getLatitude();
+                        String lng = pickup.getLongitude();
+
+                        dLat[0] = Double.parseDouble(lat);
+                        dLng[0] = Double.parseDouble(lng);
+
+                    }
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError error) {
+
+                }
+            });
+            Point finalOrigin = origin;
+            new Handler().postDelayed(() -> {
+                destination[0] = Point.fromLngLat(dLng[0], dLat[0]);
+
+                MapboxDirections client = MapboxDirections.builder()
+                        .origin(finalOrigin)
+                        .destination(destination[0])
+                        .overview(DirectionsCriteria.OVERVIEW_FULL)
+                        .profile(DirectionsCriteria.PROFILE_DRIVING)
+                        .accessToken(getString(R.string.mapbox_access_token))
+                        .build();
+
+
+                client.enqueueCall(new Callback<DirectionsResponse>() {
+                    @Override public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+
+                        pd.dismiss();
+                        if (response.body() == null) {
+                            Log.d("RESPONSE", "No routes found, make sure you set the right user and access token.");
+                            return;
+                        } else if (response.body().routes().size() < 1) {
+                            Log.d("RESPONSE", "No routes found");
+                            return;
+                        }
+
+                        Log.d("RESPONSE CODE", Integer.toString(response.code()));
+
+                        // Retrieve the directions route from the API response
+                        currentRoute[0] = response.body().routes().get(0);
+
+                        Feature directionsRouteFeature = Feature.fromGeometry(LineString.fromPolyline(currentRoute[0].geometry(), PRECISION_6));
+
+                        if (mapboxMap != null) {
+                            mapboxMap.getStyle(new Style.OnStyleLoaded() {
+                                @Override
+                                public void onStyleLoaded(@NonNull Style style) {
+
+// Retrieve and update the source designated for showing the directions route
+                                    GeoJsonSource source = style.getSourceAs("ROUTE_SOURCE_ID");
+
+// Create a LineString with the directions route's geometry and
+// reset the GeoJSON source for the route LineLayer source
+                                    if (source != null) {
+                                        source.setGeoJson(directionsRouteFeature);
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    @Override public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
+
+                        pd.dismiss();
+                        Log.d("FAILURE", "Error: " + throwable.getMessage());
+
+                    }
+                });
+
+//                RouteLeg routeLeg = RouteLeg.builder()
+//                        .annotation(LegAnnotation)
+//                        .summary(summaryString)
+//                        .build();
+//
+//                VoiceInstructions voiceInstructions = VoiceInstructions.builder()
+//                        .distanceAlongGeometry(Double distanceAlongGeometry)
+//                        .build();
+
+
+
+
+
+
+
+
+
+            }, 3000);
+
+
+
+        } catch (Exception e){
+            pd.dismiss();
+            Log.d("MAIN ACTIVITY", e.getMessage());
+            Log.d("MAIN ACTIVITY ORG", origin.toString());
+            Log.d("MAIN ACTIVITY DEST", destination[0].toString());
+        }
+
     }
 
     public void searchLocation() {
