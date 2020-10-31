@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".fragments.BusNav">
+
+    <View
+        android:id="@+id/divider2"
+        android:layout_width="50dp"
+        android:layout_height="4dp"
+        android:layout_centerHorizontal="true"
+        android:background="?android:attr/listDivider"
+        android:layout_marginTop="10dp"/>
+
+    <TextView
+        android:id="@+id/text3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Buses"
+        android:layout_below="@id/divider2"
+        android:layout_centerHorizontal="true"
+        android:padding="10dp"
+        android:textColor="@color/black"/>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/buses_recycler"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/text3"
+        android:orientation="horizontal"/>
+
+</RelativeLayout>
