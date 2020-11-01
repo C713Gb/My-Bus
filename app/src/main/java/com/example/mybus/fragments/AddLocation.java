@@ -7,6 +7,7 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
+import android.os.Handler;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -62,11 +63,19 @@ public class AddLocation extends Fragment {
         lat = ma.lat;
         lng = ma.lng;
 
+        add.getBackground().setAlpha(64);
+
+        new Handler().postDelayed(() -> {
+            add.getBackground().setAlpha(255);
+        }, 2500);
+
         add.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if (verifyDetails(placeName, lat, lng)) {
-                    addToDatabase(placeName, lat, lng);
+                if (add.getBackground().getAlpha() == 255) {
+                    if (verifyDetails(placeName, lat, lng)) {
+                        addToDatabase(placeName, lat, lng);
+                    }
                 }
             }
         });
