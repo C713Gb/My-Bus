@@ -1,6 +1,8 @@
 package com.example.mybus.fragments;
 
 import android.content.Intent;
+import android.location.Address;
+import android.location.Geocoder;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
@@ -24,6 +26,9 @@ import com.mapbox.mapboxsdk.Mapbox;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.PlaceAutocomplete;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.model.PlaceOptions;
 import com.mapbox.mapboxsdk.plugins.places.autocomplete.ui.PlaceAutocompleteFragment;
+
+import java.io.IOException;
+import java.util.List;
 
 public class HomeNav extends Fragment {
 
@@ -67,6 +72,16 @@ public class HomeNav extends Fragment {
             @Override
             public void onClick(View v) {
                 ma.searchLocation();
+
+//                ma.placesAutocomplete();
+
+            }
+        });
+
+        menu.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                ma.openDraw();
             }
         });
 

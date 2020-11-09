@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">My Bus</string>
     <string name="mapbox_access_token">pk.eyJ1IjoidWNoaWhhLWl0YWNoaSIsImEiOiJja2dobmdpYW0wNWYwMnRxa3Rzc3NpdDFhIn0.ypCx6x1hDMH3a79wu3NHhA</string>
+    <string name="places_api_key">AIzaSyBXU9OPdTPYjXjxXIrupqj6DltIjv07P1s</string>
     <string name="ok">ok</string>
     <string name="title_location_permission">My Bus</string>
     <string name="text_location_permission">Allow My Bus to access Location</string>
@@ -11,6 +12,7 @@
         <item>Driver</item>
         <item>Student</item>
     </string-array>
-    <!-- TODO: Remove or change this placeholder text -->
     <string name="hello_blank_fragment">Hello blank fragment</string>
+    <string name="navigation_drawer_open">Open navigation drawer</string>
+    <string name="navigation_drawer_close">Close navigation drawer</string>
 </resources>

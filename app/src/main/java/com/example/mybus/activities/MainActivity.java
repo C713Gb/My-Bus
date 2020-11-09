@@ -6,6 +6,8 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
+import androidx.core.view.GravityCompat;
+import androidx.drawerlayout.widget.DrawerLayout;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -28,16 +30,25 @@ import android.location.LocationManager;
 import android.os.Bundle;
 import android.os.Handler;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.Toast;
 
 import com.example.mybus.R;
 import com.example.mybus.fragments.AddLocation;
+import com.example.mybus.fragments.Buses;
 import com.example.mybus.fragments.HomeNav;
+import com.example.mybus.fragments.NotificationFragment;
+import com.example.mybus.fragments.Profile;
 import com.example.mybus.models.Bus;
 import com.example.mybus.models.Pickup;
+import com.google.android.libraries.places.api.Places;
+import com.google.android.libraries.places.api.model.Place;
+import com.google.android.libraries.places.widget.Autocomplete;
+import com.google.android.libraries.places.widget.model.AutocompleteActivityMode;
 import com.google.android.material.bottomsheet.BottomSheetBehavior;
+import com.google.android.material.navigation.NavigationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -90,6 +101,7 @@ import com.mapbox.mapboxsdk.style.sources.GeoJsonSource;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
@@ -109,7 +121,7 @@ import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineJoin;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.lineWidth;
 
 public class MainActivity extends AppCompatActivity implements LocationListener, OnMapReadyCallback, PermissionsListener,
-        MapboxMap.OnFlingListener, MapboxMap.OnMoveListener, MapboxMap.OnCameraMoveListener{
+        MapboxMap.OnFlingListener, MapboxMap.OnMoveListener, MapboxMap.OnCameraMoveListener, NavigationView.OnNavigationItemSelectedListener {
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
     private static final int WELCOME_TIMEOUT = 250;
@@ -128,6 +140,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     public Location forfrag;
 
     private BottomSheetBehavior bottomSheetBehavior;
+    private DrawerLayout drawerLayout;
 
     private LocationChangeListeningActivityLocationCallback callback =
             new LocationChangeListeningActivityLocationCallback(this);
@@ -152,6 +165,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Mapbox.getInstance(this, getString(R.string.mapbox_access_token));
+        Places.initialize(this, getString(R.string.places_api_key));
         setContentView(R.layout.activity_main);
 
         auth = FirebaseAuth.getInstance();
@@ -161,6 +175,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         View bottomSheet = findViewById(R.id.bottom_sheet);
         bottomSheetBehavior = BottomSheetBehavior.from(bottomSheet);
+        drawerLayout = findViewById(R.id.drawer_layout);
+        drawerLayout.setDrawerLockMode(DrawerLayout.LOCK_MODE_LOCKED_CLOSED);
+
+        NavigationView navigationView = findViewById(R.id.nav_view);
+        navigationView.setNavigationItemSelectedListener(this);
 
         zoom = findViewById(R.id.zoom_btn);
         zoom.setOnClickListener(new View.OnClickListener() {
@@ -202,6 +221,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         }, 3000);
 
         loadBuses();
+    }
+
+    public void openDraw() {
+        drawerLayout.openDrawer(GravityCompat.START);
     }
 
     private void loadBuses() {
@@ -293,31 +316,34 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onBackPressed() {
 
-
-        super.onBackPressed();
-
-        if (currentFrame.equals("search2")) {
+        if (drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            drawerLayout.closeDrawer(GravityCompat.START);
+        } else {
             super.onBackPressed();
-            for(int i=0;i< getSupportFragmentManager().getBackStackEntryCount();i++)
-            {
-                getSupportFragmentManager().popBackStack();
-            }
-            currentFrame = "search";
-            expandState();
-            mapboxMap.clear();
-        } else if (currentFrame.equals("bus")) {
-//            collapseState2();
-            currentFrame = "search";
-            expandState();
-            mapboxMap.clear();
-        }
 
-        new Handler().postDelayed(new Runnable() {
-            @Override
-            public void run() {
-                onMapReady(mapboxMap);
+            if (currentFrame.equals("search2")) {
+                super.onBackPressed();
+                for (int i = 0; i < getSupportFragmentManager().getBackStackEntryCount(); i++) {
+                    getSupportFragmentManager().popBackStack();
+                }
+                currentFrame = "search";
+                expandState();
+                mapboxMap.clear();
+            } else if (currentFrame.equals("bus")) {
+//            collapseState2();
+                currentFrame = "search";
+                expandState();
+                mapboxMap.clear();
             }
-        }, 3000);
+
+            new Handler().postDelayed(new Runnable() {
+                @Override
+                public void run() {
+                    onMapReady(mapboxMap);
+                }
+            }, 3000);
+
+        }
 
     }
 
@@ -360,6 +386,49 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         }, 2000);
 
 
+    }
+
+    public void zoomLocation(double lat, double lng) {
+
+        try {
+
+            if (mapboxMap.getLocationComponent().getLastKnownLocation() != null) {
+                try {
+
+                    if (mapboxMap.getLocationComponent().getLastKnownLocation() != null) {
+                        com.mapbox.mapboxsdk.geometry.LatLng abc = new com.mapbox.mapboxsdk.geometry.LatLng();
+                        abc.setLatitude(lat);
+                        abc.setLongitude(lng);
+                        mapboxMap.animateCamera(CameraUpdateFactory.newCameraPosition(new CameraPosition.Builder()
+                                .target(abc)
+                                .zoom(16f)
+                                .bearing(0)
+                                .padding(0, 0, 0, 500)
+                                .build()), 500);
+
+                    } else {
+                        Toast.makeText(getApplicationContext(), "Please Turn on Location...", Toast.LENGTH_SHORT).show();
+                    }
+                } catch (Exception e) {
+                    Toast.makeText(getApplicationContext(), "Please Turn on Location...", Toast.LENGTH_SHORT).show();
+                }
+            } else {
+
+            }
+        } catch (Exception e) {
+
+        }
+
+    }
+
+    public void placesAutocomplete() {
+        List<Place.Field> fieldList = Arrays.asList(Place.Field.ADDRESS, Place.Field.LAT_LNG, Place.Field.NAME);
+
+        Intent intent = new Autocomplete
+                .IntentBuilder(AutocompleteActivityMode.OVERLAY, fieldList)
+                .build(MainActivity.this);
+
+        startActivityForResult(intent, 100);
     }
 
     public void drawLayer(){
@@ -850,6 +919,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 }
             }
         }
+
+        try {
+
+            if (requestCode == 100 && resultCode == RESULT_OK) {
+                Place place = Autocomplete.getPlaceFromIntent(data);
+                double lat = place.getLatLng().latitude;
+                double lng = place.getLatLng().longitude;
+                zoomLocation(lat, lng);
+            } else {
+                Log.d("ACT-EX", "Exception");
+            }
+        } catch (Exception e) {
+            Log.d("ACT-EX", e.getMessage());
+        }
     }
 
     public void addFragment(Fragment fragment, boolean addToBackStack, String tag) {
@@ -951,6 +1034,26 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     @Override
     public void onCameraMove() {
 
+    }
+
+    @Override
+    public boolean onNavigationItemSelected(@NonNull MenuItem menuItem) {
+        Fragment newFragment = new Fragment();
+        switch (menuItem.getItemId()){
+            case R.id.profile_nav:
+                newFragment = new Profile();
+                break;
+            case R.id.buses_nav:
+                newFragment = new Buses();
+                break;
+            case R.id.notify_nav:
+                newFragment = new NotificationFragment();
+                break;
+        }
+        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_search,
+                newFragment).commit();
+        drawerLayout.closeDrawer(GravityCompat.START);
+        return true;
     }
 
 
