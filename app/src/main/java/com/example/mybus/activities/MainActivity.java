@@ -70,6 +70,8 @@ import com.mapbox.api.directions.v5.models.DirectionsRoute;
 import com.mapbox.api.directions.v5.models.RouteLeg;
 import com.mapbox.api.directions.v5.models.VoiceInstructions;
 import com.mapbox.api.geocoding.v5.models.CarmenFeature;
+import com.mapbox.api.optimization.v1.MapboxOptimization;
+import com.mapbox.api.optimization.v1.models.OptimizationResponse;
 import com.mapbox.geojson.Feature;
 import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.LineString;
@@ -108,6 +110,7 @@ import java.util.List;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
+import timber.log.Timber;
 
 import static android.location.GpsStatus.GPS_EVENT_STARTED;
 import static android.location.GpsStatus.GPS_EVENT_STOPPED;
@@ -160,6 +163,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     int ct = 0;
     DatabaseReference dRef;
     public ArrayList<Bus> busArrayList;
+    ProgressDialog pd;
+    final DirectionsRoute[] currentRoute = new DirectionsRoute[1];
+    private static final String FIRST = "first";
+    private static final String ANY = "any";
+    private List<Point> stops = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -566,7 +574,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
     public void showDirection(String busId) {
 
-        ProgressDialog pd = new ProgressDialog(MainActivity.this);
+        pd = new ProgressDialog(MainActivity.this);
         pd.setMessage("Loading Route...");
         pd.setCancelable(false);
         pd.setCanceledOnTouchOutside(false);
@@ -576,7 +584,6 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
         final Point[] destination = {null};
         final double[] dLat = {0};
         final double[] dLng = { 0 };
-        final DirectionsRoute[] currentRoute = new DirectionsRoute[1];
 
         try {
 
@@ -616,7 +623,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                         dLat[0] = Double.parseDouble(lat);
                         dLng[0] = Double.parseDouble(lng);
 
+                        stops.add(Point.fromLngLat(dLng[0], dLat[0]));
+
                     }
+
+                    routeSource(stops);
                 }
 
                 @Override
@@ -625,35 +636,124 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 }
             });
             Point finalOrigin = origin;
-            new Handler().postDelayed(() -> {
-                destination[0] = Point.fromLngLat(dLng[0], dLat[0]);
+//            new Handler().postDelayed(() -> {
+//                destination[0] = Point.fromLngLat(dLng[0], dLat[0]);
+//
+//                MapboxDirections client = MapboxDirections.builder()
+//                        .origin(finalOrigin)
+//                        .destination(destination[0])
+//                        .overview(DirectionsCriteria.OVERVIEW_FULL)
+//                        .profile(DirectionsCriteria.PROFILE_DRIVING)
+//                        .accessToken(getString(R.string.mapbox_access_token))
+//                        .build();
+//
+//
+//                client.enqueueCall(new Callback<DirectionsResponse>() {
+//                    @Override public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+//
+//                        pd.dismiss();
+//                        if (response.body() == null) {
+//                            Log.d("RESPONSE", "No routes found, make sure you set the right user and access token.");
+//                            return;
+//                        } else if (response.body().routes().size() < 1) {
+//                            Log.d("RESPONSE", "No routes found");
+//                            return;
+//                        }
+//
+//                        Log.d("RESPONSE CODE", Integer.toString(response.code()));
+//
+//                        // Retrieve the directions route from the API response
+//                        currentRoute[0] = response.body().routes().get(0);
+//
+//                        Feature directionsRouteFeature = Feature.fromGeometry(LineString.fromPolyline(currentRoute[0].geometry(), PRECISION_6));
+//
+//                        if (mapboxMap != null) {
+//                            mapboxMap.getStyle(new Style.OnStyleLoaded() {
+//                                @Override
+//                                public void onStyleLoaded(@NonNull Style style) {
+//
+//// Retrieve and update the source designated for showing the directions route
+//                                    GeoJsonSource source = style.getSourceAs("ROUTE_SOURCE_ID");
+//
+//// Create a LineString with the directions route's geometry and
+//// reset the GeoJSON source for the route LineLayer source
+//                                    if (source != null) {
+//                                        source.setGeoJson(directionsRouteFeature);
+//                                    }
+//                                }
+//                            });
+//                        }
+//                    }
+//
+//                    @Override public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
+//
+//                        pd.dismiss();
+//                        Log.d("FAILURE", "Error: " + throwable.getMessage());
+//
+//                    }
+//                });
+//
+////                RouteLeg routeLeg = RouteLeg.builder()
+////                        .annotation(LegAnnotation)
+////                        .summary(summaryString)
+////                        .build();
+////
+////                VoiceInstructions voiceInstructions = VoiceInstructions.builder()
+////                        .distanceAlongGeometry(Double distanceAlongGeometry)
+////                        .build();
+//
+//
+//
+//
+//
+//
+//
+//
+//
+//            }, 3000);
 
-                MapboxDirections client = MapboxDirections.builder()
-                        .origin(finalOrigin)
-                        .destination(destination[0])
-                        .overview(DirectionsCriteria.OVERVIEW_FULL)
-                        .profile(DirectionsCriteria.PROFILE_DRIVING)
-                        .accessToken(getString(R.string.mapbox_access_token))
-                        .build();
 
 
-                client.enqueueCall(new Callback<DirectionsResponse>() {
-                    @Override public void onResponse(Call<DirectionsResponse> call, Response<DirectionsResponse> response) {
+        } catch (Exception e){
+            pd.dismiss();
+            Log.d("MAIN ACTIVITY", e.getMessage());
+            Log.d("MAIN ACTIVITY ORG", origin.toString());
+            Log.d("MAIN ACTIVITY DEST", destination[0].toString());
+        }
 
-                        pd.dismiss();
-                        if (response.body() == null) {
-                            Log.d("RESPONSE", "No routes found, make sure you set the right user and access token.");
-                            return;
-                        } else if (response.body().routes().size() < 1) {
-                            Log.d("RESPONSE", "No routes found");
-                            return;
-                        }
+    }
 
-                        Log.d("RESPONSE CODE", Integer.toString(response.code()));
+    private void routeSource(List<Point> stops) {
 
-                        // Retrieve the directions route from the API response
-                        currentRoute[0] = response.body().routes().get(0);
+        MapboxOptimization client = MapboxOptimization.builder()
+                .source(FIRST)
+                .destination(ANY)
+                .coordinates(stops)
+                .overview(DirectionsCriteria.OVERVIEW_FULL)
+                .profile(DirectionsCriteria.PROFILE_DRIVING)
+                .accessToken(getString(R.string.mapbox_access_token))
+                .build();
 
+
+        client.enqueueCall(new Callback<OptimizationResponse>() {
+            @Override public void onResponse(Call<OptimizationResponse> call, Response<OptimizationResponse> response) {
+
+                pd.dismiss();
+                if (response.body() == null) {
+                    Log.d("RESPONSE", "No routes found, make sure you set the right user and access token.");
+                    return;
+                }
+
+                Log.d("RESPONSE CODE", Integer.toString(response.code()));
+
+                // Retrieve the directions route from the API response
+                List<DirectionsRoute> routes = response.body().trips();
+                if (routes != null) {
+                    if (routes.isEmpty()) {
+
+                    } else {
+// Get most optimized route from API response
+                        currentRoute[0] = routes.get(0);
                         Feature directionsRouteFeature = Feature.fromGeometry(LineString.fromPolyline(currentRoute[0].geometry(), PRECISION_6));
 
                         if (mapboxMap != null) {
@@ -673,42 +773,20 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                             });
                         }
                     }
+                } else {
+                    Timber.d("list of routes in the response is null");
+                    pd.dismiss();
+                }
 
-                    @Override public void onFailure(Call<DirectionsResponse> call, Throwable throwable) {
+            }
 
-                        pd.dismiss();
-                        Log.d("FAILURE", "Error: " + throwable.getMessage());
+            @Override public void onFailure(Call<OptimizationResponse> call, Throwable throwable) {
 
-                    }
-                });
+                pd.dismiss();
+                Log.d("FAILURE", "Error: " + throwable.getMessage());
 
-//                RouteLeg routeLeg = RouteLeg.builder()
-//                        .annotation(LegAnnotation)
-//                        .summary(summaryString)
-//                        .build();
-//
-//                VoiceInstructions voiceInstructions = VoiceInstructions.builder()
-//                        .distanceAlongGeometry(Double distanceAlongGeometry)
-//                        .build();
-
-
-
-
-
-
-
-
-
-            }, 3000);
-
-
-
-        } catch (Exception e){
-            pd.dismiss();
-            Log.d("MAIN ACTIVITY", e.getMessage());
-            Log.d("MAIN ACTIVITY ORG", origin.toString());
-            Log.d("MAIN ACTIVITY DEST", destination[0].toString());
-        }
+            }
+        });
 
     }
 
