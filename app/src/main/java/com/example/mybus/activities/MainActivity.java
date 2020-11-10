@@ -22,7 +22,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.drawable.Icon;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationListener;
@@ -33,6 +32,7 @@ import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ImageButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.mybus.R;
@@ -43,6 +43,7 @@ import com.example.mybus.fragments.NotificationFragment;
 import com.example.mybus.fragments.Profile;
 import com.example.mybus.models.Bus;
 import com.example.mybus.models.Pickup;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.google.android.libraries.places.api.Places;
 import com.google.android.libraries.places.api.model.Place;
 import com.google.android.libraries.places.widget.Autocomplete;
@@ -77,8 +78,10 @@ import com.mapbox.geojson.FeatureCollection;
 import com.mapbox.geojson.LineString;
 import com.mapbox.geojson.Point;
 import com.mapbox.mapboxsdk.Mapbox;
+import com.mapbox.mapboxsdk.annotations.Icon;
 import com.mapbox.mapboxsdk.annotations.IconFactory;
 import com.mapbox.mapboxsdk.annotations.MarkerOptions;
+import com.mapbox.mapboxsdk.annotations.PolygonOptions;
 import com.mapbox.mapboxsdk.camera.CameraPosition;
 import com.mapbox.mapboxsdk.camera.CameraUpdateFactory;
 import com.mapbox.mapboxsdk.geometry.LatLng;
@@ -115,6 +118,7 @@ import timber.log.Timber;
 import static android.location.GpsStatus.GPS_EVENT_STARTED;
 import static android.location.GpsStatus.GPS_EVENT_STOPPED;
 import static com.mapbox.core.constants.Constants.PRECISION_6;
+import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.circleColor;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconAllowOverlap;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconIgnorePlacement;
 import static com.mapbox.mapboxsdk.style.layers.PropertyFactory.iconImage;
@@ -168,6 +172,7 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
     private static final String FIRST = "first";
     private static final String ANY = "any";
     private List<Point> stops = new ArrayList<>();
+    private List<LatLng> latlngList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -220,6 +225,23 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
 
         getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_bottom,
                 new HomeNav()).commit();
+
+        View headerView = navigationView.getHeaderView(0);
+        TextView navEmail = (TextView) headerView.findViewById(R.id.profile_email);
+        String userid = auth.getCurrentUser().getUid();
+        DatabaseReference dref = FirebaseDatabase.getInstance().getReference("Users").child(userid);
+        dref.child("email").addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                navEmail.setText(snapshot.getValue().toString());
+
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+
+            }
+        });
 
         new Handler().postDelayed(new Runnable() {
             @Override
@@ -298,7 +320,8 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                         .withProperties(
                                 iconImage(ICON_ID),
                                 iconAllowOverlap(true),
-                                iconIgnorePlacement(true)
+                                iconIgnorePlacement(true),
+                                circleColor(Color.parseColor("#009688"))
                         ));
 
                 style.addSource(new GeoJsonSource("ROUTE_SOURCE_ID"));
@@ -308,10 +331,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 routeLayer.setProperties(
                         lineCap(Property.LINE_CAP_ROUND),
                         lineJoin(Property.LINE_JOIN_ROUND),
-                        lineWidth(5f),
-                        lineColor(Color.parseColor("#009688"))
+                        lineWidth(2.5f),
+                        lineColor(Color.parseColor("#4285F4"))
                 );
-                style.addLayerBelow(routeLayer, "below");
+                style.addLayerBelow(routeLayer, "below");//#009688
 
                 mapboxMap.addOnFlingListener(MainActivity.this);
                 mapboxMap.addOnMoveListener(MainActivity.this);
@@ -615,6 +638,11 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
             ref.addListenerForSingleValueEvent(new ValueEventListener() {
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    IconFactory iconFactory = IconFactory.getInstance(MainActivity.this);
+                    Icon icon = iconFactory.fromResource(R.drawable.mapbox_marker_icon_default);
+
+// Add the marker to the map
+
                     for (DataSnapshot snapshot : dataSnapshot.getChildren()) {
                         Pickup pickup = snapshot.getValue(Pickup.class);
                         String lat = pickup.getLatitude();
@@ -624,6 +652,12 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                         dLng[0] = Double.parseDouble(lng);
 
                         stops.add(Point.fromLngLat(dLng[0], dLat[0]));
+
+                        latlngList.add(new LatLng(dLat[0], dLng[0]));
+
+                        mapboxMap.addMarker(new MarkerOptions()
+                                .position(new LatLng(dLat[0], dLng[0]))
+                                .icon(icon));
 
                     }
 
@@ -1128,10 +1162,10 @@ public class MainActivity extends AppCompatActivity implements LocationListener,
                 newFragment = new NotificationFragment();
                 break;
         }
-        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_search,
-                newFragment).commit();
+//        getSupportFragmentManager().beginTransaction().replace(R.id.fragment_container_search,
+//                newFragment).commit();
         drawerLayout.closeDrawer(GravityCompat.START);
-        return true;
+        return false;
     }
 
 
