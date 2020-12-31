@@ -35,7 +35,7 @@ public class BusNav extends Fragment {
         ma = (MainActivity) getActivity();
         recyclerView = view.findViewById(R.id.buses_recycler);
         recyclerView.setHasFixedSize(true);
-        recyclerView.setLayoutManager(new LinearLayoutManager(getContext()));
+        recyclerView.setLayoutManager(new LinearLayoutManager(getContext(), LinearLayoutManager.HORIZONTAL, false));
 
         busAdapter = new BusAdapter(getActivity(), ma.busArrayList);
         recyclerView.setAdapter(busAdapter);
